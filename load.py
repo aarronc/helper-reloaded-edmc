@@ -1,5 +1,6 @@
 """
 Hutton Helper RELOADED
+
 re-write/re-imagination of HH
 """
 
@@ -20,13 +21,17 @@ from typing import Optional
 import traceback
 import uuid
 import zlib
+import os
+import json
 
 """ HH Imports """
 from big_dicts import *
+import xmit
 
 PLUGIN_NAME = "Hutton Helper RELOADED"
 
-logger = logging.getLogger(f"{appname}.{PLUGIN_NAME}")
+plugin_dir = os.path.basename(os.path.dirname(__file__))
+logger = logging.getLogger(f"{appname}.{plugin_dir}")
 
 UUID = str(uuid.uuid4())
 
@@ -38,10 +43,11 @@ class HuttonHelper:
     """
 
     def __init__(self) -> None:
-        # Instantiate Class.  decoraters are used we wont be able to do this ! 
-        self.MainMsg = ""
-        self.HuttonNews = ""
-        self.CmdrNews = ""
+        # Instantiate Class.  when decoraters are used we wont be able to do this ! 
+        self.mainmsg = ""
+        self.huttonnews = ""
+        self.cmdrnews = ""
+        self.cmdr = ""
 
         logger.info(f"{PLUGIN_NAME} instantiated")
 
@@ -71,9 +77,6 @@ class HuttonHelper:
         """
         current_row = 0
         frame = nb.Frame(parent)
-
-        # setup our config in a "Click Count: number"
-        nb.Label(frame, text='Hutton Helper').grid(row=current_row)
 
         return frame
 
@@ -111,6 +114,22 @@ class HuttonHelper:
         :param state: A dictionary containing info about the Cmdr, current ship and cargo
         :return:
         """
+        self.cmdr = cmdr
+
+    def error_report(self, description=None):
+        "Handle failure."
+
+        logger.error("ERROR: {}".format(description or ''))
+        logger.error("{}".format("\n".join(traceback.format_exception(exc_type, exc_value, exc_traceback))))
+
+        errorreport = {}
+        errorreport['cmdr'] = self.cmdr
+        errorreport['huttonappversion'] = HH_VERSION
+        errorreport['edmcversion'] = appversion
+        errorreport['modulecall'] = description or ''
+        errorreport['traceback'] = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        error_data = zlib.compress(json.dumps(errorreport).encode('utf-8'))
+        xmit.post('/errorreport', error_data, headers=xmit.COMPRESSED_OCTET_STREAM)
 
 
 hh = HuttonHelper()

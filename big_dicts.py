@@ -1,5 +1,6 @@
 """
-big_dicts 
+big_dicts
+
 just a place to store large lookup tables etc
 """
 
@@ -17,7 +18,7 @@ EVENT_STATUS_FORMATS = {
     'DockingGranted': "Docking request granted",
     'DockingTimeout': "Docking Timed out",
     'EscapeInterdiction': "Phew!, that was close {Interdictor} almost got you!",
-    'FSDJump': "Jumped into {StarSystem} system",
+    'FSDJump': "Jumped into {StarSystem} system in the {StarRegion} Region", #needs regions implementing
     'HeatWarning': "Its getting warm in here",
     'LeaveBody': "Leaving Gravitational Well",
     'Liftoff': "We have Liftoff!",
@@ -43,8 +44,61 @@ REDEEM_TYPE_STATUS_FORMATS = {
     'trade': "{:,.0f} credits earned from trade voucher",
 }
 
+# 
+EVENT_PATHS = {
+    "Bounty": "/bounty",
+    "Cargo": "/cargo",
+    "CargoDepot": "/cargodepot",
+    "CarrierJump": "/carrierjump",
+    "CollectCargo": "/cargocollection",
+    "CommitCrime": "/commitcrime",
+    "CommunityGoal": "/communitygoal",
+    "Died": "/death",
+    "Docked": "/dockedinfoupdate",
+    "DockingRequested": "/dockingrequested",
+    "DockingGranted": "/dockinggranted",
+    "EjectCargo": "/ejectcargo",
+    "EscapeInterdiction" : "/escapeinterdiction",
+    "FactionKillBond": "/factionkillbond",
+    "Friends" : "/friends",
+    "FSDJump": "/fsdjump",
+    "FSSAllBodiesFound": "/fssallbodiesfound",
+    "FSSSignalDiscovered": "/fsssignaldiscovered",
+    "Interdicted" : "/interdicted",
+    "Interdiction" : "/interdiction",
+    "LaunchDrone" : "/launchdrone",
+    "LoadGame": "/loadgame",
+    "Loadout": "/loadout",
+    "MarketBuy": "/buy",
+    "MarketSell": "/sell",
+    "MiningRefined": "/miningrefined",
+    "MissionAbandoned": "/missioncomplete",
+    "MissionAccepted": "/missiontake",
+    "MissionCompleted": "/missioncomplete",
+    "MissionFailed": "/missioncomplete",
+    "MissionRedirected": "/missionupdate",
+    "MultiSellExplorationData": "/multisellexplorationdata",
+    "NpcCrewPaidWage": "/npccrewpaidwage",
+    "Promotion": "/cmdrpromotion",
+    "ProspectedAsteroid": "/prospectedasteroid",
+    "Rank": "/rank",
+    "ReceiveText": "/receivetext",
+    "SAAScanComplete": "/saascancomplete",
+    "SAASignalsFound": "/saasignalsfound",
+    "Scan": "/scan",
+    "SearchAndRescue": "/searchandrescue",
+    "SellExplorationData": "/explorationdata",
+    "ShipTargeted": "/shiptargeted",
+    "SquadronStartup": "/squadronstartup",
+    "StartJump": "/startjump",
+    "Statistics": "/stats",
+    "SupercruiseEntry": "/supercruiseentry",
+    "SupercruiseExit": "/supercruiseexit",
+    "Undocked": "/undockedinfoupdate",
+    "USSDrop" : "/ussdrop"
+    }
 
-# Needs extra work odessey landable items and some rares are missing could make an item reporter if we dont have it in here
+# Needs extra work odyssey landable items and some rares are missing could make an item reporter if we dont have it in here send us the info
 ITEM_LOOKUP = {
     "advancedcatalysers" : "Advanced Catalysers",
     "advancedmedicines" : "Advanced Medicines",
