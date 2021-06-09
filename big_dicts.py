@@ -34,7 +34,10 @@ EVENT_STATUS_FORMATS = {
     'SupercruiseExit': "Dropped out within range of {Body}",
     'Touchdown': "Touchdown!",
     'Undocked': "Undocked",
-    'USSDrop' : "Dropped into {USSType_Localised} Threat : {USSThreat}"
+    'USSDrop' : "Dropped into {USSType_Localised} Threat : {USSThreat}",
+    'Disembark' : "Get out of the chair and have some fun commander!",
+    'Embark' : "Welcome Back, hows the weather out there?"
+    
 }
 
 REDEEM_TYPE_STATUS_FORMATS = {
