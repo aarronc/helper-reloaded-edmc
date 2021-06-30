@@ -37,18 +37,13 @@ UUID = str(uuid.uuid4())
 
 class HuttonHelper:
     """
-    ClickCounter implements the EDMC plugin interface.
-    It adds a button to the EDMC UI that displays the number of times it has been clicked, and a preference to set
-    the number directly.
+    Hutton-Helper-RELOADED
+
+    The hutton helper re-written to be more managable and easier to understand
     """
 
     def __init__(self) -> None:
         # Instantiate Class.  when decoraters are used we wont be able to do this ! 
-        self.mainmsg = ""
-        self.huttonnews = ""
-        self.cmdrnews = ""
-        self.cmdr = ""
-
         logger.info(f"{PLUGIN_NAME} instantiated")
 
     def on_load(self) -> str:
