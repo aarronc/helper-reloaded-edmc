@@ -2129,7 +2129,8 @@ def findRegion(x, y, z):
         if pv == 0:
             return None
         else:
-            return (pv, regions[pv])
+            #return (pv, regions[pv])
+            return regions[pv]
 
 def id64Coords(i):
     id64 = int(i)
@@ -2138,3 +2139,4 @@ def id64Coords(i):
     y = (((id64 >> (17 - masscode)) & (0x1FFF >> masscode)) << masscode) * 10 - 40985
     x = (((id64 >> (30 - masscode * 2)) & (0x3FFF >> masscode)) << masscode) * 10 - 49985
     return x,y,z
+

@@ -26,10 +26,12 @@ import json
 
 """ HH Imports """
 from big_dicts import *
+import hh_data
 import hh_news
 from hh_version import HH_VERSION
 import xmit
 import widgets
+import galaxy_regions
 from canonnevents import whiteList
 
 PLUGIN_NAME = "Hutton Helper RELOADED"
@@ -68,8 +70,8 @@ class HuttonHelper:
 
     The hutton helper re-written to be more managable and easier to understand
     """
-    def _cargo_refresh(cmdr):
-        dump_path = data.get_journal_path('Cargo.json')
+    def _cargo_refresh(self, cmdr):
+        dump_path = hh_data.get_journal_path('Cargo.json')
         with open(dump_path, 'r') as dump:
             dump = dump.read()
             if dump ==  "":
@@ -83,7 +85,7 @@ class HuttonHelper:
 
     def __init__(self) -> None:
         # Instantiate Class.  when decoraters are used we wont be able to do this ! 
-        self.cmdr = ""
+        self.cmdr = "Not Known Yet"
         logger.info(f"{PLUGIN_NAME} instantiated")
 
 
@@ -93,10 +95,12 @@ class HuttonHelper:
         It is the first point EDMC interacts with our code after loading our module.
         :return: The name of the plugin, which will be used by EDMC for logging and for the settings window
         """
-        extra_paths = xmit.get(ADDITIONAL_PATHS_URL)
+        # Below not working to get additional paths from server and merge the dicts
 
-        if extra_paths is not None:
-            EVENT_PATHS = merge_dicts(EVENT_PATHS, extra_paths)
+        #extra_paths = xmit.get(ADDITIONAL_PATHS_URL)
+        #nonlocal EVENT_PATHS
+        #if extra_paths is not None:
+            #EVENT_PATHS = merge_dicts(EVENT_PATHS, extra_paths)
 
         return PLUGIN_NAME
 
@@ -165,7 +169,7 @@ class HuttonHelper:
         self.status = widgets.SelfWrappingLabel(table, anchor=anchor, text="For the Mug!")
         self.status.grid(row=0, column=1, sticky=sticky)
 
-        widgets.StyleCaptureLabel(table, anchor=anchor, text="News:").grid(row=1, column=0, sticky=sticky)
+        widgets.StyleCaptureLabel(table, anchor=anchor, text="Hutton News:").grid(row=1, column=0, sticky=sticky)
         hh_news.HuttonNews(table).grid(row=1, column=1, sticky=sticky)
 
         self.plugin_rows = {}
@@ -185,11 +189,11 @@ class HuttonHelper:
         :param state: A dictionary containing info about the Cmdr, current ship and cargo
         :return:
         """
-            #we are going to send events to Canonn, The whitelist tells us which ones
+        #we are going to send events to Canonn, The whitelist tells us which ones
         try:
             whiteList.journal_entry(cmdr, is_beta, system, station, entry, state,"Hutton-Helper-{}".format(HH_VERSION))
         except:
-            print("Canonn failed, but don't let that stop you")
+            self.error_report("Canonn failed, but don't let that stop you")
 
         if is_beta:
             self.status['text'] = 'Disabled due to beta'
@@ -210,10 +214,13 @@ class HuttonHelper:
 
         event = entry['event']
 
+        # If we can find an entry in EVENT_PATHS, forward on to right end point
         event_path = EVENT_PATHS.get(event)
-
         if event_path:
             xmit.post(event_path, data=transmit_json, parse=False, headers=xmit.COMPRESSED_OCTET_STREAM)
+
+        if 'StarPos' in entry:
+            entry['StarRegion'] = galaxy_regions.findRegion(entry['StarPos'][0],entry['StarPos'][1],entry['StarPos'][2])
 
         # If we can find an entry in EVENT_STATUS_FORMATS, fill in the string and display it to the user:
         status_format = EVENT_STATUS_FORMATS.get(entry['event'])
@@ -223,7 +230,7 @@ class HuttonHelper:
         # Update and Send cargo to server
         if event == 'Cargo':
             self._cargo_refresh(cmdr)
-        
+
         # For some events, we need our status to be based on translations of the event that string.format can't easily do:
         if event == 'MarketBuy':
             this.status['text'] = "{:,.0f} {} bought".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
@@ -236,6 +243,40 @@ class HuttonHelper:
 
         elif event == 'Bounty':
             this.status['text'] = "Bounty Earned for {:,.0f} credits".format(float(entry['TotalReward']))
+    
+        elif event == 'RedeemVoucher':
+            # For some events, we need to check another lookup table. There are ways to make the original lookup table
+            # do this heavy lifting, too, but it'd make the code above more complicated than a trucker who'd only just
+            # learned Python could be expected to maintain.
+
+            redeem_status_format = REDEEM_TYPE_STATUS_FORMATS.get(entry['Type'])
+            if redeem_status_format:
+                this.status['text'] = redeem_status_format.format(float(entry['Amount']))
+
+        elif event == 'SellExplorationData':
+            baseval = entry['BaseValue']
+            bonusval = entry['Bonus']
+            totalvalue = entry['TotalEarnings']
+            this.status['text'] = "Sold ExplorationData for {:,.0f} credits".format(float(totalvalue))
+
+        elif event == 'MultiSellExplorationData':
+            baseval = entry['BaseValue']
+            bonusval = entry['Bonus']
+            totalvalue = entry['TotalEarnings']
+            this.status['text'] = "Sold ExplorationData for {:,.0f} credits".format(float(totalvalue))
+
+    def on_cmdr_data(self, data, is_beta):
+        """
+        E:D client shortly after startup gives dump of information on current commander
+        :param data: A dictionary containing info about the Cmdr
+        :param is_beta: If game is a beta version
+        :return:
+        """
+
+        if not is_beta:
+            compress_json = json.dumps(dict(data))
+            transmit_json = zlib.compress(compress_json.encode('utf-8'))
+            xmit.post('/docked', parse=False, data=transmit_json, headers=xmit.COMPRESSED_OCTET_STREAM)
 
 
     def error_report(self, description=None):
@@ -281,3 +322,6 @@ def plugin_app(parent: tk.Frame) -> Optional[tk.Frame]:
 
 def journal_entry(cmdr, is_beta, system, station, entry, state) -> None:
     return hh.process_event(cmdr, is_beta, system, station, entry, state)
+
+def cmdr_data(data, is_beta):
+    return hh.on_cmdr_data(data, is_beta)

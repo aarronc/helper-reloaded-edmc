@@ -29,7 +29,7 @@ class hh_updater():
 
     def __init__(self):
 
-        self.last_check = 
+        self.last_check = ""
         self.release_info = []
 
     def process_event(self, cmdr, is_beta, system, station, entry, state) -> None:
