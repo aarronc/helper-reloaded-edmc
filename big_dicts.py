@@ -46,11 +46,15 @@ REDEEM_TYPE_STATUS_FORMATS = {
 
 # 
 EVENT_PATHS = {
+    "ApproachSettlement": "/approachsettlement",
+    "BackpackChange" : "/backpackchange",
     "Bounty": "/bounty",
-    "Cargo": "/cargo",
+    "Cargo": "/missioncargo",
     "CargoDepot": "/cargodepot",
+    "CarrierStats": "/carrierstats",
     "CarrierJump": "/carrierjump",
     "CollectCargo": "/cargocollection",
+    "CollectItems": "/collectitems",
     "CommitCrime": "/commitcrime",
     "CommunityGoal": "/communitygoal",
     "Died": "/death",
@@ -83,12 +87,14 @@ EVENT_PATHS = {
     "ProspectedAsteroid": "/prospectedasteroid",
     "Rank": "/rank",
     "ReceiveText": "/receivetext",
+    "RedeemVoucher": "/redeemvoucher",
     "SAAScanComplete": "/saascancomplete",
     "SAASignalsFound": "/saasignalsfound",
     "Scan": "/scan",
     "SearchAndRescue": "/searchandrescue",
     "SellExplorationData": "/explorationdata",
     "ShipTargeted": "/shiptargeted",
+    "ShipLocker": "/shiplocker",
     "SquadronStartup": "/squadronstartup",
     "StartJump": "/startjump",
     "Statistics": "/stats",
@@ -96,7 +102,7 @@ EVENT_PATHS = {
     "SupercruiseExit": "/supercruiseexit",
     "Undocked": "/undockedinfoupdate",
     "USSDrop" : "/ussdrop"
-    }
+  }
 
 # Needs extra work odyssey landable items and some rares are missing could make an item reporter if we dont have it in here send us the info
 ITEM_LOOKUP = {

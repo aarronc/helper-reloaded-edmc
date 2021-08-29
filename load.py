@@ -26,14 +26,41 @@ import json
 
 """ HH Imports """
 from big_dicts import *
+import hh_news
+from hh_version import HH_VERSION
 import xmit
+import widgets
+from canonnevents import whiteList
 
 PLUGIN_NAME = "Hutton Helper RELOADED"
 
+ADDITIONAL_PATHS_URL = 'http://hot.forthemug.com/event_paths.json'
+
 plugin_dir = os.path.basename(os.path.dirname(__file__))
 logger = logging.getLogger(f"{appname}.{plugin_dir}")
+if not logger.hasHandlers():
+    level = logging.INFO  # this level means we can have level info and above So logger.info(...) is equivalent to sys.stderr.write() but puts an INFO tag on it logger.error(...) is possible gives ERROR tag
+    logger.setLevel(level)
+    logger_channel = logging.StreamHandler()
+    logger_channel.setLevel(level)
+    logger_formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d:%(funcName)s: %(message)s')
+    logger_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
+    logger_formatter.default_msec_format = '%s.%03d'
+    logger_channel.setFormatter(logger_formatter)
+    logger.addHandler(logger_channel)
 
 UUID = str(uuid.uuid4())
+
+def merge_dicts(*dict_args):
+    """
+    Given any number of dicts, shallow copy and merge into a new dict,
+    precedence goes to key value pairs in latter dicts.
+    """
+    result = {}
+    for dictionary in dict_args:
+        result.update(dictionary)
+    return result
+
 
 class HuttonHelper:
     """
@@ -41,10 +68,24 @@ class HuttonHelper:
 
     The hutton helper re-written to be more managable and easier to understand
     """
+    def _cargo_refresh(cmdr):
+        dump_path = data.get_journal_path('Cargo.json')
+        with open(dump_path, 'r') as dump:
+            dump = dump.read()
+            if dump ==  "":
+                return
+            dump = json.loads(dump)
+            dump['commandername'] = cmdr
+            compress_json = json.dumps(dump)
+            cargo_data = zlib.compress(compress_json.encode('utf-8'))
+            xmit.post('/missioncargo', cargo_data, headers=xmit.COMPRESSED_OCTET_STREAM)
+
 
     def __init__(self) -> None:
         # Instantiate Class.  when decoraters are used we wont be able to do this ! 
+        self.cmdr = ""
         logger.info(f"{PLUGIN_NAME} instantiated")
+
 
     def on_load(self) -> str:
         """
@@ -52,7 +93,13 @@ class HuttonHelper:
         It is the first point EDMC interacts with our code after loading our module.
         :return: The name of the plugin, which will be used by EDMC for logging and for the settings window
         """
+        extra_paths = xmit.get(ADDITIONAL_PATHS_URL)
+
+        if extra_paths is not None:
+            EVENT_PATHS = merge_dicts(EVENT_PATHS, extra_paths)
+
         return PLUGIN_NAME
+
 
     def on_unload(self) -> None:
         """
@@ -60,6 +107,7 @@ class HuttonHelper:
         It is the last thing called before EDMC shuts down. Note that blocking code here will hold the shutdown process.
         """
         self.on_preferences_closed("", False)  # Save our prefs
+
 
     def setup_preferences(self, parent: nb.Notebook, cmdr: str, is_beta: bool) -> Optional[tk.Frame]:
         """
@@ -75,6 +123,7 @@ class HuttonHelper:
 
         return frame
 
+
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
         """
         on_preferences_closed is called by prefs_changed below.
@@ -82,6 +131,7 @@ class HuttonHelper:
         :param cmdr: The current ED Commander
         :param is_beta: Whether or not EDMC is currently marked as in beta mode
         """
+
  
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
@@ -90,14 +140,40 @@ class HuttonHelper:
         :param parent: EDMC main window Tk
         :return: Our frame
         """
-        current_row = 0
-        frame = tk.Frame(parent)
+        padx, pady = 10, 5  # formatting
+        sticky = tk.EW + tk.N  # full width, stuck to the top
+        anchor = tk.NW
 
+        # we declare a whitelist object so we can run a timer to fetch the event whitelist from Canonn
+        # This is so that we can find out what events to transmit There is no UI associated
+        Canonn=whiteList(parent)
+        Canonn.fetchData()
 
-        current_row += 1
+        frame = self.frame = tk.Frame(parent)
+        frame.columnconfigure(0, weight=1)
 
+        table = tk.Frame(frame)
+        table.columnconfigure(1, weight=1)
+        table.grid(sticky=sticky)
+
+        HyperlinkLabel(
+            table,
+            text='Helper:',
+            url='https://hot.forthemug.com/',
+            anchor=anchor,
+        ).grid(row=0, column=0, sticky=sticky)
+        self.status = widgets.SelfWrappingLabel(table, anchor=anchor, text="For the Mug!")
+        self.status.grid(row=0, column=1, sticky=sticky)
+
+        widgets.StyleCaptureLabel(table, anchor=anchor, text="News:").grid(row=1, column=0, sticky=sticky)
+        hh_news.HuttonNews(table).grid(row=1, column=1, sticky=sticky)
+
+        self.plugin_rows = {}
+        self.plugin_frames = {}
+        row = 1 # because the table is first
 
         return frame
+
 
     def process_event(self, cmdr, is_beta, system, station, entry, state) -> None:
         """
@@ -109,7 +185,58 @@ class HuttonHelper:
         :param state: A dictionary containing info about the Cmdr, current ship and cargo
         :return:
         """
+            #we are going to send events to Canonn, The whitelist tells us which ones
+        try:
+            whiteList.journal_entry(cmdr, is_beta, system, station, entry, state,"Hutton-Helper-{}".format(HH_VERSION))
+        except:
+            print("Canonn failed, but don't let that stop you")
+
+        if is_beta:
+            self.status['text'] = 'Disabled due to beta'
+            return
+
         self.cmdr = cmdr
+        hh_news.commander = cmdr
+
+        entry['commandername'] = cmdr
+        entry['hhstationname'] = station
+        entry['hhsystemname'] = system
+        entry['huttonappversion'] = HH_VERSION
+        entry['edmcversion'] = str(appversion())
+        entry['uuid'] = UUID
+
+        compress_json = json.dumps(entry)
+        transmit_json = zlib.compress(compress_json.encode('utf-8'))
+
+        event = entry['event']
+
+        event_path = EVENT_PATHS.get(event)
+
+        if event_path:
+            xmit.post(event_path, data=transmit_json, parse=False, headers=xmit.COMPRESSED_OCTET_STREAM)
+
+        # If we can find an entry in EVENT_STATUS_FORMATS, fill in the string and display it to the user:
+        status_format = EVENT_STATUS_FORMATS.get(entry['event'])
+        if status_format:
+            self.status['text'] = status_format.format(**entry)
+
+        # Update and Send cargo to server
+        if event == 'Cargo':
+            self._cargo_refresh(cmdr)
+        
+        # For some events, we need our status to be based on translations of the event that string.format can't easily do:
+        if event == 'MarketBuy':
+            this.status['text'] = "{:,.0f} {} bought".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
+
+        elif event == 'MarketSell':
+            this.status['text'] = "{:,.0f} {} sold".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
+
+        elif event == 'FactionKillBond':
+            this.status['text'] = "Kill Bond Earned for {:,.0f} credits".format(float(entry['Reward']))
+
+        elif event == 'Bounty':
+            this.status['text'] = "Bounty Earned for {:,.0f} credits".format(float(entry['TotalReward']))
+
 
     def error_report(self, description=None):
         "Handle failure."
@@ -120,7 +247,7 @@ class HuttonHelper:
         errorreport = {}
         errorreport['cmdr'] = self.cmdr
         errorreport['huttonappversion'] = HH_VERSION
-        errorreport['edmcversion'] = appversion
+        errorreport['edmcversion'] = str(appversion())
         errorreport['modulecall'] = description or ''
         errorreport['traceback'] = traceback.format_exception(exc_type, exc_value, exc_traceback)
         error_data = zlib.compress(json.dumps(errorreport).encode('utf-8'))

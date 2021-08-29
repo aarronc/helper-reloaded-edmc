@@ -2,21 +2,28 @@
 Hutton Helper News
 """
 
-""" Other Imports """
-import os
-import sys
-import zipfile
+""" EDMC Imports """
+import logging
 import semantic_version
+from config import appname
 
 """ HH Imports """
 from hh_version import HH_VERSION
 import xmit
+
+""" Other Imports """
+import os
+import sys
+import zipfile
+from io import BytesIO
 
 HH_PLUGIN_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 RELEASE_CYCLE = 60 * 1000 * 60  # 1 Hour
 DEFAULT_URL = 'https://api.github.com/repos/aarronc/helper-reloaded-edmc/releases/latest'
 INCLUDE_EXTENSIONS = set(['.py','.md'])
 
+plugin_name = os.path.basename(os.path.dirname(__file__))
+logger = logging.getLogger("{}.{}".format(appname,plugin_name))
 
 class hh_updater():
 
@@ -33,10 +40,7 @@ class hh_updater():
 
         for filename in sorted(os.listdir(here)):
             if os.path.splitext(filename)[1] in INCLUDE_EXTENSIONS:
-                if is2:
-                    sys.stderr.write("Deleting {}...\r\n".format(filename))
-                else:
-                    logger.info("Deleting {}...".format(filename))
+                logger.info("Deleting {}...".format(filename))
                 os.remove(os.path.join(here, filename))
 
 
@@ -44,14 +48,10 @@ class hh_updater():
         "Slightly less scary."
         
         f = BytesIO(s)
-
         z = zipfile.ZipFile(f, 'r')
         with z:
             for filename in sorted(z.namelist()):
-                if is2:
-                    sys.stderr.write("Extracting {}...\r\n".format(filename))
-                else:
-                    logger.info("Extracting {}...".format(filename))
+                logger.info("Extracting {}...".format(filename))
                 z.extract(filename, path=here)
 
     

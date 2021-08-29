@@ -3,7 +3,7 @@
 """
 Code shamelessly taken from https://github.com/klightspeed/EliteDangerousRegionMap
 """
-# Got some ideas for this going forward
+# Got some ideas for this going forward "You have just entered the something something region"
 
 regions = [
     None,
