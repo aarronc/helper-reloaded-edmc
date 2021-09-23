@@ -15,6 +15,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.font as tkFont
 from ttkHyperlinkLabel import HyperlinkLabel
+import tkinter.messagebox as tkMessageBox
 
 """ Other Imports """
 from typing import Optional
@@ -28,6 +29,7 @@ import json
 from big_dicts import *
 import hh_data
 import hh_news
+import hh_updater
 from hh_version import HH_VERSION
 import xmit
 import widgets
@@ -102,6 +104,7 @@ class HuttonHelper:
         #if extra_paths is not None:
             #EVENT_PATHS = merge_dicts(EVENT_PATHS, extra_paths)
 
+        
         return PLUGIN_NAME
 
 
@@ -160,12 +163,7 @@ class HuttonHelper:
         table.columnconfigure(1, weight=1)
         table.grid(sticky=sticky)
 
-        HyperlinkLabel(
-            table,
-            text='Helper:',
-            url='https://hot.forthemug.com/',
-            anchor=anchor,
-        ).grid(row=0, column=0, sticky=sticky)
+        ttk.Label(table, anchor=anchor, text="Hutton Helper:").grid(row=0, column=0, sticky=sticky)
         self.status = widgets.SelfWrappingLabel(table, anchor=anchor, text="For the Mug!")
         self.status.grid(row=0, column=1, sticky=sticky)
 
@@ -175,6 +173,8 @@ class HuttonHelper:
         self.plugin_rows = {}
         self.plugin_frames = {}
         row = 1 # because the table is first
+
+        frame.after(250, hh_updater.release_check)
 
         return frame
 
@@ -224,6 +224,7 @@ class HuttonHelper:
 
         # If we can find an entry in EVENT_STATUS_FORMATS, fill in the string and display it to the user:
         status_format = EVENT_STATUS_FORMATS.get(entry['event'])
+        
         if status_format:
             self.status['text'] = status_format.format(**entry)
 
@@ -233,16 +234,16 @@ class HuttonHelper:
 
         # For some events, we need our status to be based on translations of the event that string.format can't easily do:
         if event == 'MarketBuy':
-            this.status['text'] = "{:,.0f} {} bought".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
+            self.status['text'] = "{:,.0f} {} bought".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
 
         elif event == 'MarketSell':
-            this.status['text'] = "{:,.0f} {} sold".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
+            self.status['text'] = "{:,.0f} {} sold".format(float(entry['Count']), ITEM_LOOKUP.get(entry['Type'],entry['Type']))
 
         elif event == 'FactionKillBond':
-            this.status['text'] = "Kill Bond Earned for {:,.0f} credits".format(float(entry['Reward']))
+            self.status['text'] = "Kill Bond Earned for {:,.0f} credits".format(float(entry['Reward']))
 
         elif event == 'Bounty':
-            this.status['text'] = "Bounty Earned for {:,.0f} credits".format(float(entry['TotalReward']))
+            self.status['text'] = "Bounty Earned for {:,.0f} credits".format(float(entry['TotalReward']))
     
         elif event == 'RedeemVoucher':
             # For some events, we need to check another lookup table. There are ways to make the original lookup table
@@ -251,19 +252,19 @@ class HuttonHelper:
 
             redeem_status_format = REDEEM_TYPE_STATUS_FORMATS.get(entry['Type'])
             if redeem_status_format:
-                this.status['text'] = redeem_status_format.format(float(entry['Amount']))
+                self.status['text'] = redeem_status_format.format(float(entry['Amount']))
 
         elif event == 'SellExplorationData':
             baseval = entry['BaseValue']
             bonusval = entry['Bonus']
             totalvalue = entry['TotalEarnings']
-            this.status['text'] = "Sold ExplorationData for {:,.0f} credits".format(float(totalvalue))
+            self.status['text'] = "Sold ExplorationData for {:,.0f} credits".format(float(totalvalue))
 
         elif event == 'MultiSellExplorationData':
             baseval = entry['BaseValue']
             bonusval = entry['Bonus']
             totalvalue = entry['TotalEarnings']
-            this.status['text'] = "Sold ExplorationData for {:,.0f} credits".format(float(totalvalue))
+            self.status['text'] = "Sold ExplorationData for {:,.0f} credits".format(float(totalvalue))
 
     def on_cmdr_data(self, data, is_beta):
         """

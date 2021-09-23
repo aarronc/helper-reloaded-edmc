@@ -8,6 +8,9 @@ import tkinter.ttk as ttk
 import tkinter.font as tkFont
 from ttkHyperlinkLabel import HyperlinkLabel
 
+""" Other Imports """
+import collections
+
 
 class StyleCaptureLabel(ttk.Label):
     """
