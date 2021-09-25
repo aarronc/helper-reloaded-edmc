@@ -31,7 +31,7 @@ logger = logging.getLogger("{}.{}".format(appname,plugin_name))
 
 lastcheck = ""
 
-def delete_current_version(self, here=HH_PLUGIN_DIRECTORY):
+def delete_current_version(here=HH_PLUGIN_DIRECTORY):
     "SCARY."
 
     for filename in sorted(os.listdir(here)):
@@ -40,15 +40,20 @@ def delete_current_version(self, here=HH_PLUGIN_DIRECTORY):
             os.remove(os.path.join(here, filename))
 
 
-def unzip_new_version(self, s, here=HH_PLUGIN_DIRECTORY):
+def unzip_new_version(s, here=HH_PLUGIN_DIRECTORY):
     "Slightly less scary."
     
     f = BytesIO(s)
     z = zipfile.ZipFile(f, 'r')
     with z:
-        for filename in sorted(z.namelist()):
-            logger.info("Extracting {}...".format(filename))
-            z.extract(filename, path=here)
+        #for filename in sorted(z.namelist()):
+        #    logger.info("Extracting {}...".format(filename))
+        #    z.extract(filename, path=here)
+        for zip_info in z.infolist():
+            if zip_info.filename[-1] == '/':
+                continue
+            zip_info.filename = os.path.basename(zip_info.filename)
+            z.extract(zip_info, here)
 
 
 def update(zipfile_url):
